@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Type Systems</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="main">
+        <h1>PROPOSAL</h1>
+
+        <h2>Abstract</h2>
+
+        <p>This proposal aims to be a clean first step towards a more flexible type-system in the Go programming language. It has clean-cut limitations that make it sane to implement and it is provably closed under the operations it introduces.</p>
+
+        <p>All features proposed here should be implementable through templating. That is, a preprocessor that generates Go code.</p>
+
+        <h2>Type Systems</h2>
+        <p>Express relations between types that compose another type.</p>
+
+        <h3>Applies to&hellip;</h3>
+        <ul>
+            <li><code>struct</code> type definitions</li>
+            <li><code>interface</code> type definitions</li>
+            <li><code>function</code> type definitions</li>
+            <li><code>function</code> signatures</li>
+        </ul>
+
+        <h3>Limitations</h3>
+        <p>These limitations are defined on purpose, targeting simplicity.</p>
+        <ul>
+            <li>
+                <p>No subtyping, implying:</p>
+                <ul>
+                    <li>Only expressable relation between types is equality.</li>
+                    <li>No way to express greater-than or less-than (sub/super type of) relations.</li>
+                    <li>No co/contravariance.</li>
+                    <li>No <a target="_blank" href="http://en.wikibooks.org/wiki/Haskell/Classes_and_types#Type_constraints">type constraints</a>/<a href="https://docs.oracle.com/javase/tutorial/java/generics/bounded.html">bounded type parameters</a>.</li>
+                </ul>
+            </li>
+            <li>
+                <p>Type parameters definable only on named types.</p>
+                <ul>
+                    <li>New syntax contained to named type definitions.</li>
+                    <li>No inline type parameter mess.</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>Case: <code>struct</code> type definition</h2>
+
+        <p class="pseudo-free">No special syntax is in use here, just color emphasis on type names.</p>
+
+<pre>
+type TypeA struct {
+    FieldA <strong class="red">TypeX</strong>,
+    FieldB <strong class="blue">TypeY</strong>,
+    FieldC struct {
+        FieldD <strong class="red">TypeX</strong>,
+    },
+    FieldE struct {
+        FieldF []<strong class="blue">TypeY</strong>,
+        FieldG <strong class="green">TypeZ</strong>,
+    },
+}
+</pre>
+
+        <h3>Constraints on <code>TypeA</code></h3>
+
+        <ul>
+            <li><code>FieldA</code> must have same type as <code>FieldC</code>'s <code>FieldD</code>.</li>
+            <li><code>FieldB</code> must have same type as <code>FieldE</code>'s <code>FieldF</code> is a slice of.</li>
+        </ul>
+
+        <h3>What is a <code>TypeA</code>?</h3>
+
+        <p>Any struct type that has the same amount of fields with the same field names in the same order and the types of said fields conforms to the constraints listed above.</p>
+
+        <h2>Case: <code>interface</code> type definition</h2>
+
+        <p class="pseudo-free">No special syntax is in use here, just color emphasis on type names.</p>
+
+<pre>
+type TypeB interface {
+    MethodA(<strong class="red">TypeX</strong>, []<strong class="blue">TypeY</strong>) <strong class="green">TypeZ</strong>
+    MethodB(<strong class="blue">TypeY</strong>, []<strong class="green">TypeZ</strong>) (<strong class="red">TypeX</strong>, error)
+}
+</pre>
+
+        <h3>Constraints on <code>TypeB</code></h3>
+
+        <ul>
+            <li><code>MethodA</code>'s first parameter must be of same type as <code>MethodB</code>'s first return value.</li>
+            <li><code>MethodA</code>'s second parameter must be a slice of the same type as <code>MethodB</code>'s first argument.</li>
+            <li><code>MethodB</code>'s second argument must be a slice of the same type as <code>MethodA</code>'s only return parameter.</li>
+        </ul>
+
+        <h3>What is a <code>TypeB</code>?</h3>
+
+        <p>Any type that has a method set containing all method names listed in the interface definition and whose signatures conform to the constraints expressed above.</p>
+
+        <h2>Case: <code>function</code> type definition</h2>
+
+        <p class="pseudo-free">No special syntax is in use here, just color emphasis on type names.</p>
+
+<pre>
+type TypeC func(<strong class="red">TypeX</strong>, []<strong class="blue">TypeY</strong>) ([]<strong class="red">TypeX</strong>, map[<strong class="blue">TypeY</strong>]<strong class="green">TypeZ</strong>)
+</pre>
+
+        <h3>Constraints on <code>TypeC</code></h3>
+
+        <ul>
+            <li>Type of first return value is slice of same type as first parameter.</li>
+            <li>Type of second return value is map with key type equal to what second parameter is a slice of.</li>
+        </ul>
+
+        <h3>What is a <code>TypeC</code>?</h3>
+
+        <p>Any  function type that takes the same number of arguments and returns the same number of values as TypeC's definition expresses and whose combined types conform to the above constraints.</p>
+
+        <h2>Case: <code>function</code> signature</h2>
+
+        <p class="pseudo-free">No special syntax is in use here, just color emphasis on type names.</p>
+
+<pre>
+func FuncA (<strong class="red">TypeX</strong>, map[<strong class="red">TypeX</strong>]<strong class="blue">TypeY</strong>) []<strong class="blue">TypeY</strong>
+</pre>
+
+
+        <h3>Constraints on <code>FuncA</code></h3>
+
+        <ul>
+            <li>Type of return value is slice of same type as second parameter's elements.</li>
+            <li>Type of second parameter's keys is same as first parameter.</li>
+        </ul>
+
+        <h3>What is <code>FuncA</code>?</h3>
+
+        <p>A function that accepts any combination of parameters that conforms to the above constraints. </p>
+
+        <h2>Syntax constraints</h2>
+
+        <p><strong>This document <em>does not</em> propose any new syntax</strong>. However, some constraints need be defined upon potential syntax candidates.</p>
+
+        <h3>References to parameterized types</h3>
+
+        <p>Just as with the existing "generic" kinds (map, slices, channels, etc), parameterized types cannot be expressed without <em>all</em> of their composing types. For instance:</p>
+
+<pre>
+type Foo struct {
+    Bar map[<strong class="red">string</strong>]<strong class="blue">int</strong> // not just "map" or "map[string]"
+    Baz []<strong class="red">string</strong>       // not just "[]"
+    Zap chan <strong class="blue">int</strong>       // not just "chan"
+}
+</pre>
+
+        <p>Therefore, a syntax that implements this must mention all of a parameterized type's argument names.</p>
+
+        <p class="pseudo-alert">Pseudo-syntax used below. I would have preferred not using <em>any</em> new syntax in this document but it proved difficult so please bear with me.</p>
+
+        <p>For example, defining a type with 2 parameters:</p>
+<pre>
+type Map &lt;<strong class="red">k</strong>, <strong class="blue">v</strong>&gt; interface {
+    Del(<strong class="red">k</strong>)
+    Set(<strong class="red">k</strong>, <strong class="blue">v</strong>)
+    Get(<strong class="red">k</strong>) (<strong class="blue">v</strong>, bool)
+}
+</pre>
+
+        <p>Whenever the type <code>Map</code> is referenced, so must be its parameters. Not necessarily with the same names as in <code>Map</code>'s definition. For instance in a function signature:</p>
+
+<pre>
+func DoTheBoogie(m Map &lt;<strong class="red">x</strong>, <strong class="blue">y</strong>&gt;) <strong class="blue">y</strong> {
+    // ...
+}
+</pre>
+
+        <h3>Insufficient type parameters</h3>
+
+        <p>Sometimes a function will require more type parameters than what its arguments provide. For example a constructor for a parametric type:</p>
+
+<pre>
+func NewParametricType() ParametricType&lt;<strong class="red">x</strong>&gt; // x?
+</pre>
+
+        <p>Without introducing new syntax; how can a caller tell <code>NewParametricType</code> what <code>x</code> should be?</p>
+
+        <p>Simple: parameterize an empty struct type and use that as a dummy:</p>
+
+<pre>
+type TypeRef &lt;<strong class="blue">t</strong>&gt; struct {}
+
+func NewParametricType(TypeRef &lt;<strong class="red">x</strong>&gt;) ParametricType &lt;<strong class="red">x</strong>&gt;
+</pre>
+
+        <p>Now <code>NewParametricType</code>'s body can refer to <code>x</code>.</p>
+
+        <h2>Integration with existing parametric types</h2>
+
+        <p>This proposal should extend nicely to the already existing parametric types.</p>
+
+        <p>The only difference between the inbuilt generic structures and user-defined parametric types would be that the former are referenced through syntactic sugar while the later are not.</p>
+
+        <h2>Use-Cases</h2>
+
+        <p class="pseudo-alert">Pseudo-syntax used below. I would have preferred not using <em>any</em> new syntax in this document but it proved difficult so please bear with me.</p>
+
+        <p>Mostly taken from <a target="_blank" href="https://groups.google.com/d/topic/golang-nuts/PYJayE50JZg/discussion">here</a> and outgoing links.</p>
+
+        <h3>Map, Type-safe containers and Type-agnostic algorithms</h3>
+
+        <p>3 top requested features are actually tighly related.</p>
+<pre>
+type Iterable &lt;<strong class="red">t</strong>&gt; interface {
+    HasNext() bool
+    Next()    <strong class="red">t</strong>
+    Reset()
+}
+
+// *SliceCollection implements Iterable
+type SliceCollection &lt;<strong class="purple">e</strong>&gt; struct {
+    coll []<strong class="purple">e</strong>
+    iter int
+}
+
+func NewSliceCollection &lt;<strong class="purple">e</strong>&gt; () *SliceCollection &lt;<strong class="purple">e</strong>&gt; {
+    return &amp;SliceCollection{make([]<strong class="purple">e</strong>, 0), 0}
+}
+
+func (c *SliceCollection&lt;<strong class="purple">e</strong>&gt;) HasNext() bool {
+    return c.iter &lt; len(c.coll)
+}
+
+func (c *SliceCollection&lt;<strong class="purple">e</strong>&gt;) Next() <strong class="purple">e</strong> {
+    v := c.coll[c.iter]
+    c.iter++
+    return v
+}
+
+func (c *SliceCollection&lt;<strong class="purple">e</strong>&gt;) Reset() {
+    c.iter = 0
+}
+
+type Functor &lt;<strong class="green">a</strong>, <strong class="blue">b</strong>&gt; func(<strong class="green">a</strong>) <strong class="blue">b</strong>
+
+func Map (i Iterable &lt;<strong class="red">a</strong>&gt;, f Functor &lt;<strong class="red">a</strong>, <strong class="blue">b</strong>&gt;) Iterable &lt;<strong class="blue">b</strong>&gt; {
+    c := NewSliceCollection()
+    for i.HasNext() {
+        c.Add(f(i.Next()))
+    }
+    return c
+}
+</pre>
+
+        <p><code>Map</code> in this case always returns a <code>*SliceCollection</code> in an <code>Iterable</code> interface. This is a limitation of map's definition, not of this implementation.</p>
+
+        <h3>Classes of numbers</h3>
+
+        <p style="padding:10px 40px;text-indent:2em"><em>Everything about being complex or quaternion, independent of base type, so as to allow Gaussian integers or complex reals via the same specializable code.</em></p>
+
+        <p>A truly good implementation of this idea depends on <a target="_blank" href="http://en.wikipedia.org/wiki/Multiple_dispatch">multiple dispatch</a> being available to the user. Since this is not the case, the next-best solution are interfaces, which we already have. Therefore this proposal brings nothing new to the table in this regard.</p>
+
+        <h2>Open questions</h2>
+
+        <h3>Should there be a way to express inequality between types?</h3>
+
+        <p>Would it make sense to provide a syntax that expresses a constraint whereby two types in one type system cannot be equal?</p>
+
+        <p>An arbitrary example would be a function type whose only parameter cannot be of the same type as its single return value.</p>
+
+        <h3>Should unnamed composite types be able to be parameterized?</h3>
+
+        <p>When we define an unnamed function, struct or interface (without the <code>type</code>-keyword), should type-parameters be allowed?</p>
+
+    </div>
+</body>
+</html>
