@@ -11,7 +11,7 @@
 
         <h2>Abstract</h2>
 
-        <p>This proposal aims to be a first step towards a more flexible type-system in the Go programming language. It has clean-cut limitations that make it sane to implement and it is provably closed under the operations it introduces.</p>
+        <p>This specification aims to be a first step towards a more flexible type-system in the Go programming language. It has clean-cut limitations that make it sane to implement and it is provably closed under the operations it introduces.</p>
 
         <p>All features proposed here should be implementable through templating. That is, a preprocessor that generates Go code.</p>
 
@@ -197,7 +197,7 @@ func NewParametricType(TypeRef &lt;<strong class="red">x</strong>&gt;) Parametri
 
         <h2>Integration with existing parametric types</h2>
 
-        <p>This proposal should extend nicely to the already existing parametric types.</p>
+        <p>This specification should extend nicely to the already existing parametric types.</p>
 
         <p>The only difference between the inbuilt generic structures and user-defined parametric types would be that the former are referenced through syntactic sugar while the later are not.</p>
 
@@ -258,7 +258,7 @@ func Map (i Iterable &lt;<strong class="red">a</strong>&gt;, f Functor &lt;<stro
 
         <p style="padding:10px 40px;text-indent:2em"><em>Everything about being complex or quaternion, independent of base type, so as to allow Gaussian integers or complex reals via the same specializable code.</em></p>
 
-        <p>A truly good implementation of this idea depends on <a target="_blank" href="http://en.wikipedia.org/wiki/Multiple_dispatch">multiple dispatch</a> being available to the user. Since this is not the case, the next-best solution are interfaces, which we already have. Therefore this proposal brings nothing new to the table in this regard.</p>
+        <p>A truly good implementation of this idea depends on <a target="_blank" href="http://en.wikipedia.org/wiki/Multiple_dispatch">multiple dispatch</a> being available to the user. Since this is not the case, the next-best solution are interfaces, which we already have. Therefore this specification brings nothing new to the table in this regard.</p>
 
         <h2>Open questions</h2>
 
